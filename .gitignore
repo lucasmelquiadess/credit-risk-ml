@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment and credentials
+.env
+.env.*
+kaggle.json
+
+# Local data
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Model artifacts and experiment tracking
+models/*
+!models/.gitkeep
+mlruns/
+mlartifacts/
+
+# Reports generated locally
+reports/figures/*
+!reports/figures/.gitkeep
+reports/*.json
+reports/*.csv
+reports/*.html
+
+# Large or generated files
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.gz
+*.parquet
+*.feather
+*.pkl
+*.joblib
+*.onnx
+*.h5
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
