@@ -18,8 +18,8 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 
 DEFAULT_RAW_DATA_PATH = RAW_DATA_DIR / "application_train.csv"
 DEFAULT_PROCESSED_DATA_PATH = PROCESSED_DATA_DIR / "credit_risk_processed.csv"
-DEFAULT_MODEL_PATH = MODEL_DIR / "credit_risk_pipeline.joblib"
-DEFAULT_METRICS_PATH = REPORTS_DIR / "model_metrics.json"
+DEFAULT_MODEL_PATH = MODEL_DIR / "credit_risk_model.pkl"
+DEFAULT_METRICS_PATH = REPORTS_DIR / "model_metrics.csv"
 
 TARGET_COLUMN = os.getenv("TARGET_COLUMN", "TARGET")
 RANDOM_STATE = int(os.getenv("RANDOM_STATE", "42"))

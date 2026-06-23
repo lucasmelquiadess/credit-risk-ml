@@ -68,6 +68,43 @@ Divisões por zero e valores infinitos são tratados como valores ausentes (`NaN
 
 O notebook `notebooks/02_feature_engineering.ipynb` mostra as distribuições dessas variáveis e compara as medianas por `TARGET`. As conclusões devem ser lidas como hipóteses para modelagem, não como prova de causalidade ou de ganho de performance.
 
+## Modeling
+
+A etapa de modelagem treina e compara quatro modelos de classificação binária:
+
+- Logistic Regression com `class_weight="balanced"`;
+- Random Forest;
+- LightGBM;
+- XGBoost.
+
+O script aplica as features financeiras, faz split treino/teste estratificado e usa um pipeline com imputação, escala para variáveis numéricas e one-hot encoding para variáveis categóricas.
+
+Para rodar o treino completo:
+
+```powershell
+python src/models/train_model.py
+```
+
+Para validar o fluxo mais rapidamente em uma amostra:
+
+```powershell
+python src/models/train_model.py --sample-size 5000
+```
+
+Se quiser registrar as métricas no MLflow durante o treino:
+
+```powershell
+python src/models/train_model.py --log-mlflow
+```
+
+O treino salva:
+
+- métricas em `reports/model_metrics.csv`;
+- melhor modelo em `models/credit_risk_model.pkl`;
+- matriz de confusão, curva ROC e curva precision-recall em `reports/figures`.
+
+Como a base é desbalanceada, a comparação não depende só de acurácia. O projeto acompanha principalmente PR-AUC, ROC-AUC, precision, recall, F1 e matriz de confusão.
+
 ## Como rodar localmente
 
 Use Python 3.12.
@@ -90,7 +127,7 @@ python -m src.data.make_dataset --use-sample
 Treine os modelos:
 
 ```powershell
-python -m src.models.train_model --input-path data/processed/credit_risk_processed.csv --target-column TARGET
+python src/models/train_model.py
 ```
 
 Faça uma predição pela linha de comando:
