@@ -105,6 +105,29 @@ O treino salva:
 
 Como a base é desbalanceada, a comparação não depende só de acurácia. O projeto acompanha principalmente PR-AUC, ROC-AUC, precision, recall, F1 e matriz de confusão.
 
+## Explainability
+
+A etapa de explicabilidade carrega o melhor modelo salvo em `models/credit_risk_model.pkl` e analisa uma amostra do dataset processado. O notebook tenta usar SHAP para explicar a importância global das variáveis. Se o SHAP não for compatível com o modelo salvo ou ficar pesado para executar, o notebook usa uma alternativa segura com importância de árvore ou permutation importance.
+
+Para rodar:
+
+```powershell
+jupyter notebook notebooks/04_explainability.ipynb
+```
+
+ou executar pela linha de comando:
+
+```powershell
+python -m jupyter nbconvert --to notebook --execute --inplace notebooks/04_explainability.ipynb --ExecutePreprocessor.timeout=300
+```
+
+A etapa salva:
+
+- `reports/figures/shap_summary.png`;
+- `reports/figures/shap_bar.png`.
+
+As interpretações dessa etapa devem ser lidas com cuidado. Importância de variável ajuda a entender o comportamento do modelo, mas não prova causalidade nem substitui uma análise de fairness, estabilidade temporal e impacto de negócio.
+
 ## Como rodar localmente
 
 Use Python 3.12.

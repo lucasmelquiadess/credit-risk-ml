@@ -56,13 +56,28 @@ Justificar a escolha considerando métrica, estabilidade, interpretabilidade e c
 
 ## 7. Explicabilidade
 
-A preencher após o notebook `04_explainability.ipynb`.
+O notebook `04_explainability.ipynb` carrega o melhor modelo salvo e gera uma análise global de importância das variáveis. A abordagem principal é SHAP. Quando o SHAP não for compatível com o modelo ou ficar pesado para executar, o notebook usa uma alternativa segura com importância nativa de modelos de árvore ou permutation importance.
 
-Incluir:
+Artefatos esperados:
 
-- principais variáveis globais;
-- exemplos de explicação local;
-- cuidados ao interpretar o modelo.
+- `reports/figures/shap_summary.png`;
+- `reports/figures/shap_bar.png`.
+
+Pontos a documentar depois da execução final:
+
+- principais variáveis globais identificadas;
+- método usado na explicação (`shap`, importância de árvore ou permutation importance);
+- sinais que parecem plausíveis do ponto de vista de crédito;
+- variáveis que podem exigir revisão por risco de proxy ou viés;
+- limitações da análise.
+
+Cuidados de interpretação:
+
+- explicabilidade mostra como o modelo usa os dados, não causalidade;
+- variáveis correlacionadas podem dividir ou distorcer importância;
+- categorias criadas por one-hot encoding devem ser interpretadas no contexto da variável original;
+- decisões de crédito exigem critérios auditáveis, possibilidade de contestação e avaliação de fairness;
+- a base do Kaggle é adequada para estudo, mas não substitui validação com dados atuais de uma operação real.
 
 ## 8. Deploy local
 
