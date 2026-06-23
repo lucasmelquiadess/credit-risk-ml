@@ -16,12 +16,12 @@ MODEL_DIR = Path(os.getenv("MODEL_DIR", str(PROJECT_ROOT / "models")))
 REPORTS_DIR = Path(os.getenv("REPORTS_DIR", str(PROJECT_ROOT / "reports")))
 FIGURES_DIR = REPORTS_DIR / "figures"
 
-DEFAULT_RAW_DATA_PATH = RAW_DATA_DIR / "credit_data.csv"
-DEFAULT_PROCESSED_DATA_PATH = PROCESSED_DATA_DIR / "credit_risk_dataset.csv"
+DEFAULT_RAW_DATA_PATH = RAW_DATA_DIR / "application_train.csv"
+DEFAULT_PROCESSED_DATA_PATH = PROCESSED_DATA_DIR / "credit_risk_processed.csv"
 DEFAULT_MODEL_PATH = MODEL_DIR / "credit_risk_pipeline.joblib"
 DEFAULT_METRICS_PATH = REPORTS_DIR / "model_metrics.json"
 
-TARGET_COLUMN = os.getenv("TARGET_COLUMN", "default")
+TARGET_COLUMN = os.getenv("TARGET_COLUMN", "TARGET")
 RANDOM_STATE = int(os.getenv("RANDOM_STATE", "42"))
 TEST_SIZE = float(os.getenv("TEST_SIZE", "0.2"))
 

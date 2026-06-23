@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+if __package__ in {None, ""}:
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.utils.config import (
     DEFAULT_PROCESSED_DATA_PATH,
@@ -76,7 +80,7 @@ def generate_sample_credit_data(
     return df
 
 
-def load_raw_dataset(path: Path, target_column: str) -> pd.DataFrame:
+def load_raw_dataset(path: Path, target_column: str) -> tuple[pd.DataFrame, tuple[int, int]]:
     if not path.exists():
         raise FileNotFoundError(
             f"Dataset not found at {path}. Add a CSV there or run with --use-sample."
@@ -84,6 +88,7 @@ def load_raw_dataset(path: Path, target_column: str) -> pd.DataFrame:
 
     df = pd.read_csv(path)
     df.columns = df.columns.str.strip()
+    initial_shape = df.shape
 
     if target_column not in df.columns:
         raise ValueError(
@@ -91,12 +96,58 @@ def load_raw_dataset(path: Path, target_column: str) -> pd.DataFrame:
             f"Available columns: {list(df.columns)}"
         )
 
-    return df.drop_duplicates().reset_index(drop=True)
+    return df, initial_shape
+
+
+def clean_dataset(
+    df: pd.DataFrame,
+    target_column: str,
+    missing_threshold: float = 0.60,
+) -> tuple[pd.DataFrame, list[str]]:
+    missing_share = df.isna().mean()
+    columns_to_drop = [
+        column
+        for column, share in missing_share.items()
+        if share > missing_threshold and column != target_column
+    ]
+
+    cleaned_df = (
+        df.drop(columns=columns_to_drop)
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+
+    return cleaned_df, columns_to_drop
 
 
 def save_processed_dataset(df: pd.DataFrame, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
+
+
+def print_dataset_summary(
+    input_path: str,
+    initial_shape: tuple[int, int],
+    final_shape: tuple[int, int],
+    removed_columns: list[str],
+    target_distribution: pd.Series,
+) -> None:
+    target_percent = (target_distribution / target_distribution.sum() * 100).round(2)
+    target_summary = pd.DataFrame(
+        {
+            "count": target_distribution,
+            "percent": target_percent,
+        }
+    )
+
+    print(f"Input file: {input_path}")
+    print(f"Initial shape: {initial_shape}")
+    print(f"Final shape: {final_shape}")
+    print(f"Columns removed (>60% missing): {len(removed_columns)}")
+    if removed_columns:
+        print(f"Removed columns: {removed_columns}")
+    print("\nTARGET distribution:")
+    print(target_summary.to_string())
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,13 +166,24 @@ def main() -> None:
 
     if args.use_sample:
         df = generate_sample_credit_data(n_samples=args.n_samples)
-        source = "synthetic sample"
+        if args.target_column != "default":
+            df = df.rename(columns={"default": args.target_column})
+        initial_shape = df.shape
+        source = f"synthetic sample ({args.n_samples} rows)"
     else:
-        df = load_raw_dataset(args.raw_path, args.target_column)
+        df, initial_shape = load_raw_dataset(args.raw_path, args.target_column)
         source = str(args.raw_path)
 
+    df, removed_columns = clean_dataset(df, args.target_column)
     save_processed_dataset(df, args.output_path)
-    print(f"Saved {len(df):,} rows from {source} to {args.output_path}.")
+    print_dataset_summary(
+        input_path=source,
+        initial_shape=initial_shape,
+        final_shape=df.shape,
+        removed_columns=removed_columns,
+        target_distribution=df[args.target_column].value_counts(dropna=False).sort_index(),
+    )
+    print(f"\nSaved processed dataset to {args.output_path}.")
 
 
 if __name__ == "__main__":
