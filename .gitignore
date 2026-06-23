@@ -17,6 +17,7 @@ env/
 .env
 .env.*
 kaggle.json
+access_token
 
 # Local data
 data/raw/*
@@ -35,6 +36,9 @@ mlartifacts/
 # Reports generated locally
 reports/figures/*
 !reports/figures/.gitkeep
+!reports/figures/*.png
+!reports/figures/*.jpg
+!reports/figures/*.jpeg
 reports/*.json
 reports/*.csv
 reports/*.html
@@ -49,6 +53,7 @@ reports/*.html
 *.feather
 *.pkl
 *.joblib
+!models/credit_risk_pipeline.joblib
 *.onnx
 *.h5
 
