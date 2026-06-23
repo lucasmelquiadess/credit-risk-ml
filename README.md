@@ -167,6 +167,24 @@ Exemplo de JSON para `POST /predict`:
 
 A resposta inclui `default_probability`, `risk_level` (`low`, `medium` ou `high`) e uma observação deixando claro que a previsão é experimental e faz parte de um projeto de portfólio.
 
+## Streamlit Dashboard
+
+O dashboard em Streamlit usa o mesmo modelo salvo em `models/credit_risk_model.pkl` e permite preencher uma solicitação simulada de crédito. Ele mostra a probabilidade estimada de inadimplência, a classificação de risco e as métricas disponíveis em `reports/model_metrics.csv`, quando esse arquivo existir.
+
+Para rodar:
+
+```powershell
+streamlit run app/streamlit_app.py
+```
+
+Depois acesse a URL exibida no terminal, normalmente:
+
+```text
+http://localhost:8501
+```
+
+O app é apenas educacional e faz parte do projeto de portfólio. Ele não deve ser usado para decisão real de crédito.
+
 ## Como rodar localmente
 
 Use Python 3.12.
