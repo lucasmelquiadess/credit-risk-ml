@@ -1,154 +1,208 @@
 # Credit Risk Prediction with Machine Learning
 
-Projeto de portfólio para construir um pipeline end-to-end de Machine Learning aplicado a risco de crédito. A ideia é prever a probabilidade de inadimplência de um cliente a partir de dados tabulares, com uma organização próxima do que eu usaria em um projeto profissional pequeno: ingestão de dados, tratamento de variáveis, treino, avaliação, explicabilidade e uma camada simples de deploy.
+Pipeline end-to-end para prever risco de inadimplência em crédito usando dados tabulares da competição Home Credit Default Risk. O projeto cobre preparação dos dados, EDA, feature engineering, comparação de modelos, explicabilidade e duas formas simples de consumo do modelo: API FastAPI e dashboard Streamlit.
 
-Este repositório ainda está na fase inicial. Os scripts já rodam localmente e existe um dataset sintético apenas para testar o fluxo, mas os resultados finais devem ser preenchidos somente depois do treino com um dataset real.
+[Live Demo](#) | [API Docs](#) | [LinkedIn Post](#)
 
-## Objetivo
+## Business Problem
 
-Treinar e comparar modelos de classificação binária para estimar risco de inadimplência. O foco do projeto não é só obter uma métrica alta, mas mostrar um processo cuidadoso:
+Instituições financeiras precisam estimar o risco de não pagamento antes de conceder crédito. Um modelo ruim pode negar crédito para bons clientes ou aprovar contratos com alto risco de inadimplência. Neste projeto, trato o problema como classificação binária: prever se uma solicitação pertence à classe `TARGET = 1`, que representa dificuldade de pagamento registrada na base.
 
-- análise exploratória antes da modelagem;
-- tratamento de dados ausentes;
-- separação entre treino e teste;
-- feature engineering com pipeline reproduzível;
-- comparação entre modelos lineares, ensemble e boosting;
-- atenção a desbalanceamento de classes;
-- avaliação com métricas adequadas para risco de crédito;
-- explicabilidade com SHAP;
-- API e app simples para consumo do modelo.
+Este repositório não propõe uma regra real de aprovação de crédito. A ideia é construir um fluxo técnico reproduzível e documentar os cuidados necessários para um problema sensível.
 
-## Dataset esperado
+## Objective
 
-O projeto usa o dataset da competição Home Credit Default Risk, disponível no Kaggle. O arquivo principal esperado é:
+Treinar e comparar modelos de machine learning para estimar probabilidade de inadimplência, com foco em:
+
+- tratamento inicial de dados ausentes;
+- criação de features financeiras simples;
+- split treino/teste estratificado;
+- comparação de modelos com métricas adequadas para classe desbalanceada;
+- explicabilidade global do modelo;
+- API e dashboard para simular previsões individuais.
+
+## Dataset
+
+O projeto usa o dataset da competição [Home Credit Default Risk](https://www.kaggle.com/competitions/home-credit-default-risk). O arquivo principal esperado é:
 
 ```text
 data/raw/application_train.csv
 ```
 
-A coluna alvo é `TARGET`, em que `1` representa clientes com dificuldade de pagamento e `0` representa clientes sem dificuldade registrada na base.
+A variável alvo é `TARGET`:
 
-Por padrão, os dados brutos não são versionados no Git. Isso evita subir arquivos grandes, dados sensíveis ou credenciais como `kaggle.json` e `access_token`.
+- `0`: cliente sem dificuldade de pagamento registrada;
+- `1`: cliente com dificuldade de pagamento registrada.
 
-## Data preparation
+Os dados brutos não são versionados no Git. O arquivo deve ser baixado pelo usuário e colocado manualmente em `data/raw/`.
 
-A primeira etapa do projeto é transformar o arquivo bruto em uma versão processada, ainda sem modelagem. O script de preparação fica em `src/data/make_dataset.py` e faz um tratamento inicial simples:
+## Technologies
 
-- carrega `data/raw/application_train.csv`;
-- valida se a coluna `TARGET` existe;
-- remove colunas com mais de 60% de valores ausentes;
-- remove linhas duplicadas;
-- salva o resultado em `data/processed/credit_risk_processed.csv`;
-- imprime um resumo com shape inicial, shape final, quantidade de colunas removidas e distribuição da variável alvo.
+- Python 3.12
+- pandas, numpy
+- scikit-learn
+- LightGBM, XGBoost, Random Forest, Logistic Regression
+- SHAP
+- MLflow opcional
+- FastAPI, Uvicorn
+- Streamlit
+- matplotlib
+- pytest, ruff
+- Docker
 
-Os números desse resumo dependem do arquivo usado localmente, então eles não ficam fixados aqui no README. Para gerar o dataset processado, rode:
+## Project Structure
 
-```powershell
+```text
+credit-risk-ml/
+├── app/                  # FastAPI e Streamlit
+├── data/                 # Dados locais ignorados pelo Git
+│   ├── raw/
+│   ├── interim/
+│   └── processed/
+├── models/               # Modelos treinados localmente
+├── notebooks/            # EDA, features, modelagem e explicabilidade
+├── reports/              # Métricas, relatório e figuras
+├── src/                  # Código reutilizável do pipeline
+└── tests/                # Testes unitários
+```
+
+## Data Preparation
+
+O script `src/data/make_dataset.py` lê `data/raw/application_train.csv`, valida a existência da coluna `TARGET`, remove colunas com mais de 60% de valores ausentes, remove duplicatas e salva:
+
+```text
+data/processed/credit_risk_processed.csv
+```
+
+Comando:
+
+```bash
 python src/data/make_dataset.py
 ```
 
-Se quiser usar outro arquivo CSV ou outro nome de alvo, use:
+O resumo com shape inicial, shape final, colunas removidas e distribuição do `TARGET` é impresso no terminal. Esses números são gerados ao rodar o script localmente.
 
-```powershell
-python src/data/make_dataset.py --raw-path data/raw/application_train.csv --target-column TARGET
-```
+## Exploratory Data Analysis
+
+O notebook `notebooks/01_eda.ipynb` analisa:
+
+- dimensão e tipos de dados;
+- distribuição da variável `TARGET`;
+- valores ausentes restantes após a preparação;
+- variáveis numéricas importantes, como renda, valor do crédito, anuidade, idade e tempo de emprego.
+
+Figuras geradas:
+
+![Target distribution](reports/figures/target_distribution.png)
+
+![Missing values](reports/figures/missing_values_top20.png)
 
 ## Feature Engineering
 
-A primeira camada de feature engineering cria razões financeiras simples a partir das colunas originais do Home Credit. Essas variáveis ajudam a comparar contratos em escala relativa, em vez de olhar apenas valores absolutos.
+A primeira camada de features cria razões financeiras simples:
 
-Features criadas em `src/features/build_features.py`:
+| Feature | Fórmula |
+| --- | --- |
+| `CREDIT_INCOME_RATIO` | `AMT_CREDIT / AMT_INCOME_TOTAL` |
+| `ANNUITY_INCOME_RATIO` | `AMT_ANNUITY / AMT_INCOME_TOTAL` |
+| `EMPLOYED_AGE_RATIO` | `DAYS_EMPLOYED / DAYS_BIRTH` |
+| `CREDIT_ANNUITY_RATIO` | `AMT_CREDIT / AMT_ANNUITY` |
 
-- `CREDIT_INCOME_RATIO`: `AMT_CREDIT / AMT_INCOME_TOTAL`;
-- `ANNUITY_INCOME_RATIO`: `AMT_ANNUITY / AMT_INCOME_TOTAL`;
-- `EMPLOYED_AGE_RATIO`: `DAYS_EMPLOYED / DAYS_BIRTH`;
-- `CREDIT_ANNUITY_RATIO`: `AMT_CREDIT / AMT_ANNUITY`.
+Divisões por zero e valores infinitos são convertidos para `NaN`, deixando a imputação do pipeline tratar esses casos depois.
 
-Divisões por zero e valores infinitos são tratados como valores ausentes (`NaN`). A etapa de imputação do pipeline fica responsável por lidar com esses casos depois.
+O notebook `notebooks/02_feature_engineering.ipynb` compara as distribuições dessas features por `TARGET`.
 
-O notebook `notebooks/02_feature_engineering.ipynb` mostra as distribuições dessas variáveis e compara as medianas por `TARGET`. As conclusões devem ser lidas como hipóteses para modelagem, não como prova de causalidade ou de ganho de performance.
+![Feature ratio distributions](reports/figures/feature_ratio_distributions.png)
 
 ## Modeling
 
-A etapa de modelagem treina e compara quatro modelos de classificação binária:
+O script `src/models/train_model.py` aplica as features, separa `X` e `y`, cria um split treino/teste estratificado e treina quatro modelos:
 
 - Logistic Regression com `class_weight="balanced"`;
 - Random Forest;
 - LightGBM;
 - XGBoost.
 
-O script aplica as features financeiras, faz split treino/teste estratificado e usa um pipeline com imputação, escala para variáveis numéricas e one-hot encoding para variáveis categóricas.
+O pré-processamento usa `ColumnTransformer`:
 
-Para rodar o treino completo:
+- numéricas: `SimpleImputer(strategy="median")` + `StandardScaler`;
+- categóricas: `SimpleImputer(strategy="most_frequent")` + `OneHotEncoder(handle_unknown="ignore")`.
 
-```powershell
+Comando principal:
+
+```bash
 python src/models/train_model.py
 ```
 
-Para validar o fluxo mais rapidamente em uma amostra:
+Para testar mais rápido:
 
-```powershell
+```bash
 python src/models/train_model.py --sample-size 5000
-```
-
-Se quiser registrar as métricas no MLflow durante o treino:
-
-```powershell
-python src/models/train_model.py --log-mlflow
 ```
 
 O treino salva:
 
-- métricas em `reports/model_metrics.csv`;
-- melhor modelo em `models/credit_risk_model.pkl`;
-- matriz de confusão, curva ROC e curva precision-recall em `reports/figures`.
+- `reports/model_metrics.csv`;
+- `models/credit_risk_model.pkl`;
+- `reports/figures/confusion_matrix.png`;
+- `reports/figures/roc_curve.png`;
+- `reports/figures/precision_recall_curve.png`.
 
-Como a base é desbalanceada, a comparação não depende só de acurácia. O projeto acompanha principalmente PR-AUC, ROC-AUC, precision, recall, F1 e matriz de confusão.
+## Metrics
+
+Acurácia não é suficiente aqui porque a classe positiva é minoritária. Por isso, a comparação usa principalmente PR-AUC, ROC-AUC, precision, recall, F1 e matriz de confusão.
+
+Último resultado salvo em `reports/model_metrics.csv`:
+
+| Model | ROC-AUC | PR-AUC | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| LightGBM | 0.7686 | 0.2575 | 0.1770 | 0.6790 | 0.2808 |
+| XGBoost | 0.7666 | 0.2557 | 0.1720 | 0.6874 | 0.2752 |
+| Logistic Regression | 0.7486 | 0.2273 | 0.1613 | 0.6757 | 0.2605 |
+| Random Forest | 0.7439 | 0.2214 | 0.1680 | 0.6270 | 0.2650 |
+
+Esses valores vêm do arquivo de métricas local. Se o treino for reexecutado com outra amostra, outro threshold ou outros hiperparâmetros, os resultados podem mudar.
+
+![ROC curve](reports/figures/roc_curve.png)
+
+![Precision-recall curve](reports/figures/precision_recall_curve.png)
 
 ## Explainability
 
-A etapa de explicabilidade carrega o melhor modelo salvo em `models/credit_risk_model.pkl` e analisa uma amostra do dataset processado. O notebook tenta usar SHAP para explicar a importância global das variáveis. Se o SHAP não for compatível com o modelo salvo ou ficar pesado para executar, o notebook usa uma alternativa segura com importância de árvore ou permutation importance.
+O notebook `notebooks/04_explainability.ipynb` carrega `models/credit_risk_model.pkl` e tenta gerar explicações com SHAP. Se SHAP não for compatível com o modelo salvo, o notebook usa importância de árvore ou permutation importance.
 
-Para rodar:
+Figuras geradas:
 
-```powershell
-jupyter notebook notebooks/04_explainability.ipynb
-```
+![SHAP summary](reports/figures/shap_summary.png)
 
-ou executar pela linha de comando:
+![SHAP bar](reports/figures/shap_bar.png)
 
-```powershell
-python -m jupyter nbconvert --to notebook --execute --inplace notebooks/04_explainability.ipynb --ExecutePreprocessor.timeout=300
-```
+As explicações ajudam a entender quais variáveis pesam mais no comportamento do modelo. Elas não provam causalidade e não substituem análise de fairness, estabilidade temporal ou revisão de política de crédito.
 
-A etapa salva:
+## Deploy
 
-- `reports/figures/shap_summary.png`;
-- `reports/figures/shap_bar.png`.
+### FastAPI
 
-As interpretações dessa etapa devem ser lidas com cuidado. Importância de variável ajuda a entender o comportamento do modelo, mas não prova causalidade nem substitui uma análise de fairness, estabilidade temporal e impacto de negócio.
+A API carrega `models/credit_risk_model.pkl` e expõe:
 
-## API
+- `GET /`;
+- `GET /health`;
+- `POST /predict`;
+- documentação automática em `/docs`.
 
-A API em FastAPI carrega o modelo salvo em `models/credit_risk_model.pkl` e expõe uma rota simples para simular uma previsão individual. Antes de subir a API, treine um modelo pelo menos uma vez:
+Comando:
 
-```powershell
-python src/models/train_model.py --sample-size 5000
-```
-
-Para iniciar o servidor local:
-
-```powershell
+```bash
 uvicorn app.api:app --reload
 ```
 
-Depois acesse a documentação interativa:
+Documentação local:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-Exemplo de JSON para `POST /predict`:
+Exemplo de payload para `POST /predict`:
 
 ```json
 {
@@ -165,133 +219,102 @@ Exemplo de JSON para `POST /predict`:
 }
 ```
 
-A resposta inclui `default_probability`, `risk_level` (`low`, `medium` ou `high`) e uma observação deixando claro que a previsão é experimental e faz parte de um projeto de portfólio.
+### Streamlit
 
-## Streamlit Dashboard
+O dashboard permite preencher uma solicitação simulada de crédito, ver a probabilidade estimada de inadimplência, a classificação de risco e as métricas salvas no CSV.
 
-O dashboard em Streamlit usa o mesmo modelo salvo em `models/credit_risk_model.pkl` e permite preencher uma solicitação simulada de crédito. Ele mostra a probabilidade estimada de inadimplência, a classificação de risco e as métricas disponíveis em `reports/model_metrics.csv`, quando esse arquivo existir.
+Comando:
 
-Para rodar:
-
-```powershell
+```bash
 streamlit run app/streamlit_app.py
 ```
 
-Depois acesse a URL exibida no terminal, normalmente:
+URL local usual:
 
 ```text
 http://localhost:8501
 ```
 
-O app é apenas educacional e faz parte do projeto de portfólio. Ele não deve ser usado para decisão real de crédito.
+### Docker
 
-## Como rodar localmente
+O Dockerfile prepara um ambiente Python 3.12 para a API. Dados brutos, credenciais e modelos locais são excluídos do contexto por `.dockerignore`. Para usar a API dentro do container, monte ou gere o modelo antes de servir a aplicação.
 
-Use Python 3.12.
+## How to Run Locally
+
+1. Crie e ative o ambiente:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate
+```
+
+No PowerShell:
 
 ```powershell
-cd credit-risk-ml
-py -3.12 -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+```
+
+2. Instale as dependências:
+
+```bash
 pip install -r requirements.txt
 pip install -e .
 ```
 
-Para validar o pipeline sem dataset real, gere uma base sintética pequena:
+3. Coloque o arquivo `application_train.csv` em:
 
-```powershell
-python -m src.data.make_dataset --use-sample
+```text
+data/raw/application_train.csv
 ```
 
-Treine os modelos:
+4. Prepare os dados:
 
-```powershell
+```bash
+python src/data/make_dataset.py
+```
+
+5. Treine os modelos:
+
+```bash
 python src/models/train_model.py
 ```
 
-Faça uma predição pela linha de comando:
+6. Rode a API:
 
-```powershell
-$record = '{\"age\":35,\"income\":72000,\"loan_amount\":18000,\"loan_term_months\":36,\"interest_rate\":0.12,\"employment_years\":6,\"credit_history_years\":8,\"existing_debt\":9000,\"missed_payments_2y\":0,\"has_mortgage\":1,\"loan_purpose\":\"car\"}'
-python -m src.models.predict_model --input-json $record
-```
-
-Suba a API:
-
-```powershell
+```bash
 uvicorn app.api:app --reload
 ```
 
-Suba o app em Streamlit:
+7. Rode o dashboard:
 
-```powershell
+```bash
 streamlit run app/streamlit_app.py
 ```
 
-Execute os testes:
+8. Execute testes e lint:
 
-```powershell
+```bash
 pytest
-```
-
-Cheque estilo do código:
-
-```powershell
 ruff check .
 ```
 
-## Estrutura do projeto
+## Limitations
 
-```text
-credit-risk-ml/
-├── app/                  # API FastAPI e interface Streamlit
-├── data/                 # Dados brutos, intermediários e processados
-├── models/               # Artefatos treinados localmente
-├── notebooks/            # Exploração, features, modelagem e SHAP
-├── reports/              # Relatórios e figuras
-├── src/                  # Código reutilizável do pipeline
-└── tests/                # Testes automatizados
-```
+- O dataset é de competição e pode não representar uma carteira de crédito atual.
+- O modelo ainda usa um threshold fixo de `0.5`; em crédito, esse ponto deveria ser escolhido com base em custo de erro e política de negócio.
+- A validação atual usa split treino/teste. Uma avaliação mais forte usaria validação cruzada temporal ou validação fora do tempo, se houvesse datas adequadas.
+- Explicabilidade global não garante justiça individual.
+- Variáveis aparentemente neutras podem funcionar como proxy de características sensíveis.
+- O projeto não implementa monitoramento de drift, calibração de probabilidade ou rotina de retreinamento.
 
-## Métricas que serão acompanhadas
+## What I Would Improve Next
 
-Como o problema é de risco de crédito, acurácia sozinha não é suficiente. A avaliação deve olhar principalmente para a capacidade de encontrar inadimplentes sem gerar falsos positivos demais.
-
-| Modelo | ROC-AUC | PR-AUC | Recall da classe 1 | Precision da classe 1 | F1 da classe 1 | Threshold |
-| --- | --- | --- | --- | --- | --- | --- |
-| Logistic Regression | A preencher | A preencher | A preencher | A preencher | A preencher | A preencher |
-| Random Forest | A preencher | A preencher | A preencher | A preencher | A preencher | A preencher |
-| XGBoost | A preencher | A preencher | A preencher | A preencher | A preencher | A preencher |
-| LightGBM | A preencher | A preencher | A preencher | A preencher | A preencher | A preencher |
-
-## Plano de análise
-
-1. Entender a distribuição da variável alvo.
-2. Verificar dados ausentes, outliers e possíveis vazamentos de informação.
-3. Criar um pipeline com imputação, escala para variáveis numéricas e one-hot encoding para variáveis categóricas.
-4. Treinar uma baseline simples antes de modelos mais fortes.
-5. Comparar modelos com foco em PR-AUC, recall e custo dos erros.
-6. Ajustar hiperparâmetros com Optuna quando a baseline estiver estável.
-7. Explicar o modelo escolhido com SHAP.
-8. Publicar uma API simples e uma interface Streamlit para demonstrar o uso.
-
-## Resultados
-
-Esta seção será preenchida depois do treino com o dataset real.
-
-### Melhor modelo
-
-A preencher.
-
-### Principais variáveis
-
-A preencher após análise de importância e SHAP.
-
-### Limitações
-
-A preencher com base no dataset usado, nos vieses encontrados e no comportamento do modelo.
-
-## Observações
-
-O dataset sintético gerado por `src.data.make_dataset` serve apenas para testar se a estrutura funciona. Ele não deve ser usado para tirar conclusões sobre crédito, risco ou performance real de modelos.
+- Ajustar hiperparâmetros com Optuna usando uma métrica principal definida antes do treino.
+- Calibrar probabilidades com `CalibratedClassifierCV` ou técnica equivalente.
+- Escolher o threshold com base em uma matriz de custos.
+- Avaliar estabilidade por subgrupos e possíveis riscos de proxy.
+- Separar treino e validação por tempo, caso uma coluna temporal confiável esteja disponível.
+- Adicionar um pipeline de inferência em batch.
+- Publicar uma demo com modelo treinado de forma controlada e documentação clara sobre o uso educacional.
+- Adicionar testes para API, Streamlit e preparação de payload de inferência.

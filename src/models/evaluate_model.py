@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,16 @@ from sklearn.metrics import (
 
 def predict_positive_probability(model: Any, X: pd.DataFrame) -> np.ndarray:
     if hasattr(model, "predict_proba"):
-        probabilities = model.predict_proba(X)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "X does not have valid feature names, but .* was fitted "
+                    "with feature names"
+                ),
+                category=UserWarning,
+            )
+            probabilities = model.predict_proba(X)
         if probabilities.shape[1] == 1:
             return probabilities[:, 0]
         return probabilities[:, 1]

@@ -14,8 +14,8 @@ from src.models.evaluate_model import predict_positive_probability
 from src.utils.config import DEFAULT_MODEL_PATH
 
 OBSERVATION = (
-    "Experimental portfolio prediction. This API is for learning and demonstration "
-    "only, not for real credit decisions."
+    "Previsão experimental para projeto de portfólio. Use apenas para estudo e "
+    "demonstração, não para decisões reais de crédito."
 )
 
 app = FastAPI(

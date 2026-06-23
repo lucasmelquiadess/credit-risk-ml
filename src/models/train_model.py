@@ -22,7 +22,7 @@ from src.features.build_features import (  # noqa: E402
     split_features_target,
 )
 from src.models.evaluate_model import (  # noqa: E402
-    evaluate_classifier,
+    calculate_binary_classification_metrics,
     metrics_to_frame,
     predict_positive_probability,
     save_confusion_matrix_plot,
@@ -204,10 +204,9 @@ def train_and_compare(
         pipeline.fit(X_train, y_train)
 
         y_proba = predict_positive_probability(pipeline, X_test)
-        metrics = evaluate_classifier(
-            pipeline,
-            X_test,
+        metrics = calculate_binary_classification_metrics(
             y_test,
+            y_proba,
             threshold=threshold,
         )
         metrics["sample_size"] = sample_size

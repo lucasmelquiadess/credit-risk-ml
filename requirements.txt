@@ -1,21 +1,31 @@
+# Core data stack
 pandas>=2.2
 numpy>=1.26
 scikit-learn>=1.5
+joblib>=1.4
+python-dotenv>=1.0
+
+# Modeling
 xgboost>=2.1
 lightgbm>=4.5
 imbalanced-learn>=0.12
-shap>=0.46
 optuna>=4.0
 mlflow>=2.17
+
+# Explainability and visualization
+shap>=0.46
+matplotlib>=3.9
+plotly>=5.24
+
+# Apps and API
 fastapi>=0.115
 uvicorn[standard]>=0.30
 streamlit>=1.38
 pydantic>=2.8
-joblib>=1.4
-matplotlib>=3.9
-plotly>=5.24
-pytest>=8.3
-ruff>=0.6
-python-dotenv>=1.0
+
+# Notebooks and development
 jupyter>=1.1
 ipykernel>=6.29
+nbconvert>=7.16
+pytest>=8.3
+ruff>=0.6

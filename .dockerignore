@@ -1,29 +1,20 @@
-# Python
+.git/
+.venv/
+venv/
+env/
 __pycache__/
 *.py[cod]
-*.pyo
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-.coverage
-htmlcov/
 .ipynb_checkpoints/
-build/
-dist/
 
-# Virtual environments
-.venv/
-venv/
-env/
-
-# Environment and credentials
 .env
 .env.*
 kaggle.json
 access_token
 
-# Local data
 data/raw/*
 data/interim/*
 data/processed/*
@@ -31,25 +22,13 @@ data/processed/*
 !data/interim/.gitkeep
 !data/processed/.gitkeep
 
-# Model artifacts and experiment tracking
 models/*
 !models/.gitkeep
 mlruns/
 mlartifacts/
 
-# Reports generated locally
-reports/figures/*
-!reports/figures/.gitkeep
-!reports/figures/*.png
-!reports/figures/*.jpg
-!reports/figures/*.jpeg
-reports/*.json
-reports/*.csv
-!reports/model_metrics.csv
 reports/*.html
-*.log
-
-# Large or generated files
+reports/*.json
 *.zip
 *.7z
 *.tar
@@ -62,7 +41,6 @@ reports/*.html
 *.onnx
 *.h5
 
-# OS and editor
 .DS_Store
 Thumbs.db
 .vscode/
