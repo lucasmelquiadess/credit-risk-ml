@@ -20,18 +20,38 @@ Treinar e comparar modelos de classificação binária para estimar risco de ina
 
 ## Dataset esperado
 
-O projeto espera um arquivo CSV em `data/raw/credit_data.csv`, com uma coluna alvo binária chamada `default`.
+O projeto usa o dataset da competição Home Credit Default Risk, disponível no Kaggle. O arquivo principal esperado é:
 
-Exemplo de formato:
+```text
+data/raw/application_train.csv
+```
 
-| age | income | loan_amount | loan_purpose | default |
-| --- | --- | --- | --- | --- |
-| 35 | 72000 | 18000 | car | 0 |
-| 47 | 41000 | 25000 | debt_consolidation | 1 |
+A coluna alvo é `TARGET`, em que `1` representa clientes com dificuldade de pagamento e `0` representa clientes sem dificuldade registrada na base.
 
-Se o dataset real usar outro nome para a coluna alvo, passe o nome com `--target-column`.
+Por padrão, os dados brutos não são versionados no Git. Isso evita subir arquivos grandes, dados sensíveis ou credenciais como `kaggle.json` e `access_token`.
 
-Por padrão, os dados brutos não são versionados no Git. Isso evita subir dados privados, arquivos grandes ou credenciais como `kaggle.json`.
+## Data preparation
+
+A primeira etapa do projeto é transformar o arquivo bruto em uma versão processada, ainda sem modelagem. O script de preparação fica em `src/data/make_dataset.py` e faz um tratamento inicial simples:
+
+- carrega `data/raw/application_train.csv`;
+- valida se a coluna `TARGET` existe;
+- remove colunas com mais de 60% de valores ausentes;
+- remove linhas duplicadas;
+- salva o resultado em `data/processed/credit_risk_processed.csv`;
+- imprime um resumo com shape inicial, shape final, quantidade de colunas removidas e distribuição da variável alvo.
+
+Os números desse resumo dependem do arquivo usado localmente, então eles não ficam fixados aqui no README. Para gerar o dataset processado, rode:
+
+```powershell
+python src/data/make_dataset.py
+```
+
+Se quiser usar outro arquivo CSV ou outro nome de alvo, use:
+
+```powershell
+python src/data/make_dataset.py --raw-path data/raw/application_train.csv --target-column TARGET
+```
 
 ## Como rodar localmente
 
@@ -55,7 +75,7 @@ python -m src.data.make_dataset --use-sample
 Treine os modelos:
 
 ```powershell
-python -m src.models.train_model --input-path data/processed/credit_risk_dataset.csv --target-column default
+python -m src.models.train_model --input-path data/processed/credit_risk_processed.csv --target-column TARGET
 ```
 
 Faça uma predição pela linha de comando:
