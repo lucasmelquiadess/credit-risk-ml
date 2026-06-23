@@ -53,6 +53,21 @@ Se quiser usar outro arquivo CSV ou outro nome de alvo, use:
 python src/data/make_dataset.py --raw-path data/raw/application_train.csv --target-column TARGET
 ```
 
+## Feature Engineering
+
+A primeira camada de feature engineering cria razões financeiras simples a partir das colunas originais do Home Credit. Essas variáveis ajudam a comparar contratos em escala relativa, em vez de olhar apenas valores absolutos.
+
+Features criadas em `src/features/build_features.py`:
+
+- `CREDIT_INCOME_RATIO`: `AMT_CREDIT / AMT_INCOME_TOTAL`;
+- `ANNUITY_INCOME_RATIO`: `AMT_ANNUITY / AMT_INCOME_TOTAL`;
+- `EMPLOYED_AGE_RATIO`: `DAYS_EMPLOYED / DAYS_BIRTH`;
+- `CREDIT_ANNUITY_RATIO`: `AMT_CREDIT / AMT_ANNUITY`.
+
+Divisões por zero e valores infinitos são tratados como valores ausentes (`NaN`). A etapa de imputação do pipeline fica responsável por lidar com esses casos depois.
+
+O notebook `notebooks/02_feature_engineering.ipynb` mostra as distribuições dessas variáveis e compara as medianas por `TARGET`. As conclusões devem ser lidas como hipóteses para modelagem, não como prova de causalidade ou de ganho de performance.
+
 ## Como rodar localmente
 
 Use Python 3.12.

@@ -8,6 +8,44 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+FEATURE_RATIOS = {
+    "CREDIT_INCOME_RATIO": ("AMT_CREDIT", "AMT_INCOME_TOTAL"),
+    "ANNUITY_INCOME_RATIO": ("AMT_ANNUITY", "AMT_INCOME_TOTAL"),
+    "EMPLOYED_AGE_RATIO": ("DAYS_EMPLOYED", "DAYS_BIRTH"),
+    "CREDIT_ANNUITY_RATIO": ("AMT_CREDIT", "AMT_ANNUITY"),
+}
+
+
+def _safe_divide(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
+    numerator = pd.to_numeric(numerator, errors="coerce")
+    denominator = pd.to_numeric(denominator, errors="coerce").replace(0, np.nan)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = numerator / denominator
+
+    return result.replace([np.inf, -np.inf], np.nan)
+
+
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    required_columns = {
+        column
+        for numerator, denominator in FEATURE_RATIOS.values()
+        for column in (numerator, denominator)
+    }
+    missing_columns = sorted(required_columns - set(df.columns))
+    if missing_columns:
+        raise ValueError(f"Missing columns for feature engineering: {missing_columns}")
+
+    features_df = df.copy()
+
+    for feature_name, (numerator, denominator) in FEATURE_RATIOS.items():
+        features_df[feature_name] = _safe_divide(
+            features_df[numerator],
+            features_df[denominator],
+        )
+
+    return features_df
+
 
 def split_features_target(
     df: pd.DataFrame,
