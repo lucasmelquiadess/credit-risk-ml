@@ -128,6 +128,45 @@ A etapa salva:
 
 As interpretações dessa etapa devem ser lidas com cuidado. Importância de variável ajuda a entender o comportamento do modelo, mas não prova causalidade nem substitui uma análise de fairness, estabilidade temporal e impacto de negócio.
 
+## API
+
+A API em FastAPI carrega o modelo salvo em `models/credit_risk_model.pkl` e expõe uma rota simples para simular uma previsão individual. Antes de subir a API, treine um modelo pelo menos uma vez:
+
+```powershell
+python src/models/train_model.py --sample-size 5000
+```
+
+Para iniciar o servidor local:
+
+```powershell
+uvicorn app.api:app --reload
+```
+
+Depois acesse a documentação interativa:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Exemplo de JSON para `POST /predict`:
+
+```json
+{
+  "AMT_INCOME_TOTAL": 180000,
+  "AMT_CREDIT": 600000,
+  "AMT_ANNUITY": 28000,
+  "DAYS_BIRTH": -14000,
+  "DAYS_EMPLOYED": -2500,
+  "NAME_CONTRACT_TYPE": "Cash loans",
+  "CODE_GENDER": "F",
+  "FLAG_OWN_CAR": "N",
+  "FLAG_OWN_REALTY": "Y",
+  "CNT_CHILDREN": 0
+}
+```
+
+A resposta inclui `default_probability`, `risk_level` (`low`, `medium` ou `high`) e uma observação deixando claro que a previsão é experimental e faz parte de um projeto de portfólio.
+
 ## Como rodar localmente
 
 Use Python 3.12.
